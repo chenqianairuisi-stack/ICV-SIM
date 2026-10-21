@@ -9,7 +9,11 @@ from .controller import steering_control, speed_control, stopping_speed, obstacl
 from .scenarios import light_state
 
 
-def run(scenario, vehicle, dt=.05):
+def run(scenario, vehicle, dt=.05, backend=None):
+    steer_fn = backend.steering_control if backend else steering_control
+    speed_fn = backend.speed_control if backend else speed_control
+    obstacle_fn = backend.obstacle_speed if backend else obstacle_speed
+    advance_fn = backend.advance if backend else advance
     state = State(*map(float, scenario.initial), scenario.metadata.get("initial_speed", 0))
     t, index, progress = 0., 0, 0.
     dwell_start, parked_seconds, parked_ok, parked_reverse = None, 0., False, False
@@ -105,7 +109,7 @@ def run(scenario, vehicle, dt=.05):
         detected = objects
         if "detection_range_m" in scenario.metadata:
             detected = [o for o in objects if math.hypot(o[0] - state.x, o[1] - state.y) < scenario.metadata["detection_range_m"]]
-        obstacle_limit, emergency, gap = obstacle_speed(state, route, progress, detected, vehicle)
+        obstacle_limit, emergency, gap = obstacle_fn(state, route, progress, detected, vehicle)
         # Crossing prediction extends the obstacle corridor through the stopping horizon.
         if scenario.metadata.get("pedestrian"):
             for ox, oy, oyaw, length, width, velocity in objects:
@@ -154,11 +158,11 @@ def run(scenario, vehicle, dt=.05):
                 reached = True
                 break
 
-        steering = steering_control(state, route, progress, vehicle)
+        steering = steer_fn(state, route, progress, vehicle)
         if target < .01 and abs(state.v) < .04:
             steering = 0
-        acceleration = speed_control(state, target, route.direction, vehicle, emergency)
-        next_state = advance(state, acceleration, steering, dt, vehicle)
+        acceleration = speed_fn(state, target, route.direction, vehicle, emergency)
+        next_state = advance_fn(state, acceleration, steering, dt, vehicle)
         lateral_a = state.v**2 * math.tan(next_state.steer) / vehicle.wheelbase
         max_acceleration = max(max_acceleration, math.hypot(next_state.a, lateral_a))
         trace.append([round(t, 3), state.x, state.y, state.yaw, state.v,
@@ -168,7 +172,7 @@ def run(scenario, vehicle, dt=.05):
         t += dt
 
     result = {
-        "key": scenario.key, "title": scenario.title, "backend": "offline_scipy_bicycle",
+        "key": scenario.key, "title": scenario.title, "backend": backend.name if backend else "offline_scipy_bicycle",
         "official_score": None, "official_example": scenario.official_example,
         "completed": reached, "time_s": round(t, 3), "collision": collision,
         "boundary_contact": outside, "red_violation": red_violation, "speeding": bool(speeding),

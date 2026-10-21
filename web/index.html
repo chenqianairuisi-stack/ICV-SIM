@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ICV 驾驶仿真实验台</title><link rel="stylesheet" href="style.css"></head>
 <body>
-<header><div class="brand"><span class="brand-mark">ICV</span><div><strong>驾驶仿真实验台</strong><small>智能网联车设计 · 2026</small></div></div><span class="environment"><i></i>离线仿真 / 自建场景</span><a href="../README.html" title="打开交接说明" class="icon-button" aria-label="交接说明"><i data-lucide="book-open"></i></a></header>
+<header><div class="brand"><span class="brand-mark">ICV</span><div><strong>驾驶仿真实验台</strong><small>智能网联车设计 · 2026</small></div></div><div class="header-tools"><span class="environment"><i></i><span id="backend-label">Python 离线仿真 / 自建场景</span></span><button id="backend-toggle" class="backend-toggle" type="button" aria-pressed="false">切换 C++ 仿真</button><a href="../README.html" title="打开交接说明" class="icon-button" aria-label="交接说明"><i data-lucide="book-open"></i></a></div></header>
 <div class="workspace">
 <aside class="scenario-panel"><div class="section-label">测试场景 <span id="total"></span></div><nav id="scenarios"></nav><div class="run-status"><span class="dot"></span><span id="summary"></span></div></aside>
 <main>
@@ -13,5 +13,5 @@
 </main>
 <aside class="results-panel"><div class="section-label">规则检查 <span id="result-badge"></span></div><div class="score"><span>本地规则估分</span><strong id="score"></strong><small>官方平台成绩：未测</small></div><div id="checks"></div><div class="section-label event-title">事件记录</div><div id="events"></div><a id="csv" class="export" href="#"><i data-lucide="file-spreadsheet"></i>轨迹数据 CSV<i data-lucide="arrow-up-right"></i></a></aside>
 </div><footer><span>SciPy RK45 · 运动学自行车模型 · <span id="dt"></span></span><span>车道 / 信号灯 / 碰撞 / 泊车</span></footer>
-<script src="lucide.min.js"></script><script src="replays.js"></script><script src="app.js"></script>
+<script src="lucide.min.js"></script><script src="replays.js"></script><script src="replays_cpp.js"></script><script src="app.js"></script>
 </body></html>

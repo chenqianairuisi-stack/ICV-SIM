@@ -2,11 +2,11 @@
 
 智能网联车离线规划、控制与仿真
 
-本项目面向 NEVC 智能网联车竞赛的前期开发与算法验证。在官方平台尚未开放、暂时无法登录联调的情况下，使用 Python 搭建本地闭环仿真环境，完成车辆路径规划、运动控制、安全决策、运行记录和可视化回放。
+本项目面向 NEVC 智能网联车竞赛的前期开发与算法验证。在官方平台尚未开放、暂时无法登录联调的情况下，以 Python 场景工具搭建本地闭环仿真，并使用 **CMake + Visual Studio 2022 构建 C++ 控制核心和 SimOne SDK 接入程序**。
 
-项目将算法计算与网页展示分开：Python 根据车辆状态持续计算控制指令并更新车辆运动，浏览器读取仿真生成的轨迹，提供播放、暂停、进度拖动和倍速查看功能。
+项目将场景工具、C++ 控制算法和网页展示分开：离线场景可分别由原 Python 算法和编译出的 C++ 控制核心闭环运行，浏览器支持对照两套轨迹；C++ 同时提供读取 SimOne GPS/障碍物与下发车辆控制指令的 SDK 接入程序。
 
-- [完整 HTML 技术说明：文件结构、函数、控制公式与队友交接](README.html)（下载仓库后用浏览器打开）
+- [完整 HTML 技术说明：文件结构、函数、控制公式、CMake/Visual Studio 使用和队友交接](README.html)（下载仓库后用浏览器打开）
 - [本地运行结果汇总](output/RESULTS.md)
 - [泊车动画](output/parking.gif) / [城市道路动画](output/city.gif)
 - 下载或克隆仓库后，双击 `web/index.html` 查看交互回放，双击 `README.html` 阅读浏览器版详细说明。GitHub 文件预览页面不会直接运行 HTML。
@@ -47,6 +47,8 @@
 - `icv/controller.py`：转向、速度、跟车和紧急制动控制。
 - `icv/scenarios.py`：道路、信号灯、障碍物及任务配置。
 - `icv/simulation.py`：闭环仿真、任务切换、指标统计与本地检查。
+- `CMakeLists.txt`、`CMakePresets.json`：使用 CMake GUI 配置 VS2022、C++ 测试和 NEVC SDK 链接。
+- `cpp/`：C++ 控制核心、Python 对照 DLL、原生测试及 SimOne SDK 接入程序。
 - `web/`：交互式轨迹回放页面。
 - `output/`：轨迹、报告、动画和验证截图。
 - `tests/`：安全检查与回归测试。
@@ -58,12 +60,17 @@
 
 ## 运行方式
 
-克隆仓库：
+Windows 已安装 CMake 和 Visual Studio 2022 的电脑可从仓库根目录运行：
 
 ```bash
 git clone https://github.com/chenqianairuisi-stack/ICV-SIM.git
 cd ICV-SIM
+cmake --preset vs2022
+cmake --build --preset vs2022-release --parallel 4
+ctest --preset vs2022-release
 ```
+
+`open_cmake_gui.bat` 可用 CMake GUI 配置 SDK 工程，`open_visual_studio.bat` 打开生成的 Visual Studio solution。无本机 NEVC SDK 时用 `vs2022-core` preset 构建独立离线算法核心。
 
 安装依赖并运行全部场景：
 
@@ -78,12 +85,12 @@ python run_offline.py
 python -m unittest discover -s tests -v
 ```
 
-运行完成后，用浏览器打开 `web/index.html` 查看仿真回放。Windows 用户也可以使用项目提供的批处理脚本启动。
+仅 Python 离线运行时，用浏览器打开 `web/index.html` 查看回放。Windows 用户也可使用 `cmake --build build/vs2022 --config Release --target run_cpp_offline` 运行 C++ 后端，再在同一页面切换对比。
 
 ## 当前进展与边界
 
 目前九个场景均通过已设置的本地检查，并完成默认控制周期及更小控制周期的复核。
 
-这些结果来自自建离线环境，**不代表 NEVC 官方测试或比赛成绩**。场景使用已知地图、参考路线和理想状态信息，尚未接入真实摄像头感知；车辆采用运动学模型，未覆盖轮胎侧滑等复杂动力学。现有资料提供的是部分任务示例，也不能据此认定覆盖全部正式赛题。
+这些结果来自自建离线环境，**不代表 NEVC 官方测试或比赛成绩**。C++ SimOne SDK 可执行程序已用本机 SDK 3.0.0001 编译并通过无连接的版本探测，仍须平台开放后确认官方运行环境、SDK 版本、传感器名称、转向正负号和控制量标定。程序读取已配置的 GPS、感知障碍物/交通灯，发送转向、油门/制动、档位和灯光指令；官方联调尚未进行。离线场景使用已知地图、参考路线和理想状态信息，车辆采用运动学模型，未覆盖轮胎侧滑等复杂动力学。现有资料提供的是部分任务示例，也不能据此认定覆盖全部正式赛题。
 
 后续将在官方平台开放后，完成接口标定、车辆控制适配和真实比赛场景验证，并根据任务需求进一步评估 MPC 等控制方法。

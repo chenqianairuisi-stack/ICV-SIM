@@ -65,18 +65,20 @@ def docs():
     for d in DATA:
         r = d["result"]
         rows.append(f"<tr><td>{html.escape(r['title'])}</td><td>{'通过' if r['passed'] else '未通过'}</td><td>{r['time_s']:.2f}</td><td>{r['local_score_estimate'] if r['local_score_estimate'] is not None else '附加测试'}</td></tr>")
-    # The HTML is the sole detailed guide; only its generated results tail is replaced.
+    # The HTML is the sole detailed guide; only the generated results block is replaced.
     document = (ROOT / "README.html").read_text(encoding="utf-8")
-    content, marker, _ = document.partition('<h2 id="run-results">')
-    if not marker:
-        raise ValueError("README.html is missing the run-results section")
+    content, marker, tail = document.partition('<!-- GENERATED RESULTS START -->')
+    if not marker or '<!-- GENERATED RESULTS END -->' not in tail:
+        raise ValueError("README.html is missing generated results delimiters")
+    _, _, suffix = tail.partition('<!-- GENERATED RESULTS END -->')
+    content += marker
     content += '<h2 id="run-results">从当前文件读取的运行汇总</h2><small>全部为自建场景本地结果，官方平台未运行。城市估分未计未建模的官方实线扣分。</small><div class="table-scroll"><table id="run-results-table"><thead><tr><th>场景</th><th>检查</th><th>用时 / 秒</th><th>本地估分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>'
     by_key = {d["result"]["key"]: d["result"] for d in DATA}
     if "traffic_red" in by_key:
         content += '<p>红灯车头停车间距：' + html.escape(str(by_key["traffic_red"]["red_stop_gaps_m"])) + ' m。</p>'
     if "parking" in by_key:
         content += '<p>泊车停稳：' + str(by_key["parking"]["parked_seconds"]) + ' s。</p>'
-    content += '<img src="output/parking.gif" alt="实际计算的泊车轨迹动画"></main></html>'
+    content += '<img src="output/parking.gif" alt="实际计算的泊车轨迹动画"><!-- GENERATED RESULTS END -->' + suffix
     (ROOT / "README.html").write_text(content, encoding="utf-8")
     summary = ["# 离线运行结果", "", "以下不是 NEVC 官方成绩。", "", "| 场景 | 本地检查 | 时间 s | 本地估分 |", "|---|---|---:|---:|"]
     for d in DATA:

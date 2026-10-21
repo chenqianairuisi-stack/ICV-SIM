@@ -1,33 +1,37 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ICV 代码结构与控制方法说明</title><style>body{font:15px/1.9 'Microsoft YaHei',sans-serif;color:#263338;background:#f4f6f6;margin:0}main{max-width:1040px;margin:auto;padding:35px 24px 70px}h1{font-size:27px;line-height:1.5}h2{font-size:20px;border-top:1px solid #d7e0e0;padding-top:25px;margin-top:36px}h3{font-size:17px;margin-top:27px}h2,h3{scroll-margin-top:20px}p,li{overflow-wrap:anywhere}a{color:#087d70}code,pre{font-family:Consolas,'Microsoft YaHei',monospace;background:#e6ecec;border-radius:3px}code{font-size:13px;padding:2px 4px;overflow-wrap:anywhere}pre{padding:18px;overflow:auto;font-size:12px;line-height:1.8}pre code{font-size:inherit;padding:0;white-space:pre;overflow-wrap:normal}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:10px;border-bottom:1px solid #d7dfdf;vertical-align:top;min-width:100px;overflow-wrap:anywhere}th{background:#e7eeed}.table-scroll{max-width:100%;overflow:auto;margin:18px 0}img{max-width:100%;height:auto}small{color:#697b80}.actions{display:flex;gap:20px;flex-wrap:wrap}.toc{padding:15px 0;border-bottom:1px solid #d7dfdf}.toc ol{columns:2;padding-left:24px}.toc li{break-inside:avoid;font-size:13px;padding:3px 10px 3px 0}@media(max-width:650px){main{padding:20px 14px 40px}h1{font-size:23px}h2{font-size:18px}.toc ol{columns:1}.actions{gap:12px;font-size:13px}td,th{padding:8px}pre{padding:12px}}</style><main><div class="actions"><a href="web/index.html">打开交互回放</a><a href="output/parking.gif">泊车动画</a><a href="output/report.json">原始检查报告</a></div><h1>智能网联车设计：代码、文件结构与仿真详细说明</h1>
-<p><strong>当前不是 MPC。横向使用 Pure Pursuit（纯追踪），纵向使用 P（比例）速度控制，再加规则决策；车辆由运动学自行车模型积分运动。不是完整 PID，也没有滚动优化求解器。</strong></p>
+<p><strong>当前不是 MPC。横向使用 Pure Pursuit（纯追踪），纵向使用 P（比例）速度控制，再加规则决策；车辆由运动学自行车模型积分运动。不是完整 PID，也没有滚动优化求解器。</strong> Python 与 C++ 后端运行同一套离线场景；C++ 另包含用 CMake、Visual Studio 2022 和本机 SimOne SDK 构建的接入程序。</p>
 <nav class="toc" aria-label="说明目录"><strong>说明目录</strong><ol><li class="h2"><a href="#section-1">先看效果</a></li><li class="h2"><a href="#section-2">软件的作用</a></li><li class="h2"><a href="#section-3">重新计算</a></li><li class="h2"><a href="#section-4">阅读方式</a></li><li class="h2"><a href="#section-5">文件结构：每一级负责什么</a></li><li class="h2"><a href="#section-6">代码结构：核心类与函数</a></li><li class="h2"><a href="#section-7">车是怎么动起来的</a></li><li class="h2"><a href="#section-11">控制方法详解</a></li><li class="h2"><a href="#section-16">路线怎么规划</a></li><li class="h2"><a href="#section-19">各场景具体怎样完成</a></li><li class="h2"><a href="#section-20">为什么不是 MPC，如何升级 MPC</a></li><li class="h2"><a href="#section-21">常用参数在哪里改</a></li><li class="h2"><a href="#section-22">输出数据怎么读</a></li><li class="h2"><a href="#section-26">当前测量结果与验证方法</a></li><li class="h2"><a href="#section-27">实现边界与容易误解的地方</a></li><li class="h2"><a href="#section-28">常见问题</a></li><li class="h2"><a href="#section-29">规则与实现边界</a></li><li class="h2"><a href="#section-30">比赛开放后的操作</a></li><li class="h2"><a href="#section-33">给队友的一段话</a></li><li class="h2"><a href="#section-34">来源</a></li><li><a href="#run-results">从当前文件读取的运行汇总</a></li></ol></nav><h2 id="section-1">先看效果</h2>
 <p>双击 <code>web/index.html</code>，无需登录、联网或启动服务器。选择左侧场景，使用播放、暂停、进度条和倍速查看车辆。右侧是整次运行的本地检查结果，底部是当前帧的数据。<code>README.html</code> 是可直接发给队友的完整交接说明。</p>
 <p>结果来自代码实际闭环计算，未连接官方 NEVC，不能作为比赛成绩。原始赛题说明为 <code>说明文档.pdf</code> 第 20–42 页；该外部资料不包含在本仓库中。第 31–32 页仅给了四类评分示例，不是完整题库。实现了这四类，加上四类附加安全测试；信号灯拆成红转绿、全绿两种，因此共 9 个测试用例。</p>
 <h2 id="section-2">软件的作用</h2>
 <ul>
 <li>NEVC-SimOne：官方场景、传感器、车辆动力学和评分环境，开放后必须在里面联调。</li>
-<li>Visual Studio 2022：编辑/编译 C++；本项目用 Python，离线运行不需要它。</li>
-<li>CMake GUI：为 C++ 项目生成构建工程；Python 离线项目不需要它。</li>
-<li>Python：本项目算法、动力学积分、几何检测和数据导出。</li>
+<li>Visual Studio 2022：编辑、构建、调试 C++ 控制核心及链接 SimOne SDK 的接入程序。</li>
+<li>CMake GUI：读取根目录 CMakeLists.txt 并生成 VS2022 工程；vs2022 预设默认启用本机 NEVC SDK。</li>
+<li>Python：离线场景、几何评分、回放数据、基线实现，以及调用 C++ DLL 进行双后端对照。</li>
 </ul>
 <h2 id="section-3">重新计算</h2>
 <p>在本目录打开终端：</p>
-<pre><code class="language-powershell">python -m pip install -r requirements.txt
-python run_offline.py
-python -m unittest discover -s tests -v
+<pre><code class="language-powershell">cmake --preset vs2022
+cmake --build --preset vs2022-release --parallel 4
+ctest --preset vs2022-release
 </code></pre>
-<p>也可双击 <code>run_simulation.bat</code>。计算后会更新 <code>output/report.json</code>、各场景 CSV/JSON 和 <code>web/replays.js</code>。完整重算约需一分钟至数分钟，取决于电脑。运行结束必须核对 PASS/FAIL，程序失败会返回非零状态。</p>
+<p>也可双击 <code>run_simulation.bat</code> 运行 Python 基线。C++ 场景在编译后运行：<code>cmake --build build/vs2022 --config Release --target run_cpp_offline</code>。结果分别写入 <code>output/</code> 与 <code>output/cpp/</code>；网页顶部可切换后端回放。每次运行都要核对 PASS/FAIL。</p>
 <p>单场调试：<code>python run_offline.py --scenario parking</code>。注意：单场运行会把网页回放和汇总报告更新为该单场；交付或展示前重新运行全部场景。</p>
 <h2 id="section-4">阅读方式</h2>
 <p>这份说明按当前源码核对，整理于 2026-10-22。下面依次解释文件结构、函数调用、车辆运动、控制与规划方法、数据和测试；末尾保留赛题规则、NEVC 接入及队伍交接。代码之后有改动时，要重新计算并同步本说明，不能把旧结果当成新版本结果。</p>
-<p>推荐阅读顺序：<code>run_offline.py</code> → <code>scenarios.py</code> → <code>simulation.py</code> → <code>controller.py</code> → <code>model.py</code> → <code>planning.py</code> → <code>web/app.js</code>。</p>
+<p>推荐阅读顺序：<code>run_offline.py</code> → <code>icv/simulation.py</code> → <code>cpp/src/control.cpp</code> → <code>cpp/src/nevc_main.cpp</code> → <code>web/app.js</code>。</p>
 <h2 id="section-5">文件结构：每一级负责什么</h2>
 <pre><code class="language-text">ICV-SIM/                               克隆后的项目根目录
     |-- README.md                       GitHub 首页项目介绍与运行入口
     |-- README.html                     唯一完整技术说明，直接编辑；工具刷新运行结果
-    |-- requirements.txt                离线算法、动画和说明导出的依赖
+    |-- CMakeLists.txt                  CMake 根工程：C++ 核心、Python 联测和可选 NEVC SDK 程序
+    |-- CMakePresets.json               CMake GUI/VS2022 预设：vs2022 含 SDK，vs2022-core 为离线核心
+    |-- requirements.txt                Python 场景工具与轨迹导出依赖（C++ 由 CMake 管理）
     |-- run_offline.py                  入口：执行场景，保存轨迹及报告
-    |-- run_simulation.bat              一键重算全部场景、导出、打开网页
+    |-- run_simulation.bat              一键重算全部 Python 场景、导出并打开网页
+    |-- open_cmake_gui.bat              打开配置好本机 SimOne SDK 路径的 CMake GUI
+    |-- open_visual_studio.bat          打开生成的 Visual Studio 2022 solution
     |-- open_replay.bat                 只打开已有回放，不重新计算
     |-- nevc_bridge.py                  尚未完成正式联调的 NEVC 基础适配器
     |-- .gitignore                      忽略 Python 缓存等开发文件
@@ -40,6 +44,14 @@ python -m unittest discover -s tests -v
     |   |-- scenarios.py                自建道路、灯、物体和各任务配置
     |   `-- simulation.py               闭环主循环、任务切换、指标与本地评分
     |
+    |-- cpp/                            一级目录：CMake/Visual Studio 编译的 C++ 控制与 SDK 接入
+    |   |-- include/icv/control.hpp     C++ 车辆参数、状态、路线、障碍与控制器接口
+    |   |-- include/icv/c_api.hpp       导出给 Python ctypes 的 DLL 接口
+    |   |-- src/control.cpp             Pure Pursuit、P/AEB、障碍判断与 RK4 车辆积分
+    |   |-- src/c_api.cpp               C++ 函数到 Python 的 ABI 数据适配
+    |   |-- src/nevc_main.cpp          SimOne GPS、感知、灯态与车辆控制 SDK 接入程序
+    |   `-- tests/core_tests.cpp        原生控制核心的单元测试
+    |
     |-- config/                         一级目录：正式平台接入配置
     |   `-- nevc.example.json            二级文件：待标定示例，默认拒绝直接驱动
     |
@@ -48,6 +60,7 @@ python -m unittest discover -s tests -v
     |   |-- style.css                   样式和手机/桌面适配
     |   |-- app.js                      从已有轨迹取帧、画车、播放和展示结果
     |   |-- replays.js                  仿真生成的场景和回放数据，不是控制算法
+    |   |-- replays_cpp.js              由编译版 C++ 后端生成的闭环回放数据
     |   |-- lucide.min.js               离线第三方图标库
     |   `-- .gitkeep                    原始空目录占位，无运行逻辑
     |
@@ -71,8 +84,9 @@ python -m unittest discover -s tests -v
     |       |-- parking_gif_frame.png   泊车 GIF 抽查帧
     |       `-- verification.json       浏览器检查结果
     |
-    |-- tests/                          一级目录：回归测试
-    |   `-- test_safety.py               二级文件：碰撞、越界、红灯、泊车计分测试
+    |-- tests/                          一级目录：Python 安全测试与 C++ 对照测试
+    |   |-- test_safety.py              Python 计分与几何安全回归
+    |   `-- test_native.py              Python/C++ 转向、制动、积分及九场闭环对照
     |
     |-- tools/                          一级目录：开发、导出和验证工具
     |   |-- fetch_vendor.py             下载第三方规划器、辅助函数和许可
@@ -89,7 +103,7 @@ python -m unittest discover -s tests -v
             `-- angle.py                三级文件：角度归一化工具
 </code></pre>
 <p><code>&lt;场景名&gt;</code> 对应 <code>traffic_red</code>、<code>traffic_green</code>、<code>obstacle_start</code>、<code>parking</code>、<code>city</code>、<code>lane_keep</code>、<code>aeb</code>、<code>acc</code>、<code>pedestrian</code>。Python 自动生成的 <code>__pycache__/</code>、<code>.pyc</code> 是缓存，不必当作算法阅读。</p>
-<p>一句话记法：根目录脚本是“入口”，<code>icv</code> 是“算法”，<code>web</code> 是“展示”，<code>output</code> 是“记录”，<code>tests/tools</code> 是“验证和辅助”，<code>config/nevc_bridge.py</code> 是“待完成的官方平台连接”。</p>
+<p>一句话记法：根目录脚本是 Python 场景入口，<code>icv</code> 保留 Python 基线，<code>cpp</code> 是 C++ 控制和 SDK 接入，<code>web</code> 是双后端轨迹展示，<code>output</code> 是记录，<code>tests/tools</code> 是验证和辅助，CMake 与 VS2022 管理 C++ 构建。</p>
 <h2 id="section-6">代码结构：核心类与函数</h2>
 <div class="table-scroll"><table>
 <thead>
@@ -222,7 +236,7 @@ simulation.run() 每 dt 秒更新一次控制
 
 运行结束 -&gt; CSV/JSON/replays.js -&gt; 网页/GIF 回放
 </code></pre>
-<p>检查发生在离散状态上。默认 dt=0.05 秒，即每秒更新控制 20 次；周期内部使用自适应 RK45 积分，不等于 RK45 固定每 0.05 秒只算一次。</p>
+<p>检查发生在离散状态上。默认 dt=0.05 秒，即每秒更新控制 20 次；Python 基线在周期内部使用自适应 RK45 积分，C++ 后端使用分段四阶 RK4 积分。二者不是 NEVC 的车辆动力学模型。</p>
 <h3 id="section-9">坐标和单位</h3>
 <div class="table-scroll"><table>
 <thead>
@@ -260,17 +274,17 @@ simulation.run() 每 dt 秒更新一次控制
 </table></div>
 <p>显示换算为 <code>km/h = m/s * 3.6</code>，<code>度 = rad * 180 / pi</code>。不能将一切负加速度都称为刹车，要结合速度方向解释。</p>
 <h3 id="section-10">车辆模型与方程</h3>
-<p><code>model.py</code> 使用以后轴中心为参考点的运动学自行车模型，把四轮简化为前后两个等效轮，假设无侧滑：</p>
+<p><code>icv/model.py</code> 与 <code>cpp/src/control.cpp</code> 使用以后轴中心为参考点的运动学自行车模型，把四轮简化为前后两个等效轮，假设无侧滑：</p>
 <pre><code class="language-text">dx/dt   = v * cos(psi)
 dy/dt   = v * sin(psi)
 dpsi/dt = v / L * tan(delta)
 dv/dt   = a
 </code></pre>
-<p><code>L</code> 是轴距。<code>advance()</code> 调用 SciPy <code>solve_ivp</code>，默认方法 RK45，<code>rtol=1e-7</code>、<code>atol=1e-9</code>。先限幅加速度与转角，再限制每周期转角变化；还有防止制动一个周期直接穿过零速导致误反向的处理。倒车段随后给负目标速度才开始倒车。</p>
+<p><code>L</code> 是轴距。Python 的 <code>advance()</code> 调用 SciPy <code>solve_ivp</code> 默认 RK45；C++ 的 <code>icv::advance()</code> 按最长 0.01 秒子步采用经典 RK4。两边都先限幅加速度与转角，再限制每周期转角变化；还有防止制动穿过零速导致误反向的处理。</p>
 <p><strong>这是运动学模型，不是考虑轮胎力、惯性和侧偏的动力学自行车模型，也不是 NEVC 的多自由度模型。</strong> 加速度直接作用于速度微分，没有发动机、制动液压、悬架、轮胎打滑和坡度模型。</p>
 <h2 id="section-11">控制方法详解</h2>
 <h3 id="section-12">横向：Pure Pursuit 纯追踪</h3>
-<p>位置：<code>controller.py: steering_control()</code>。从当前路线进度向前寻找预瞄点，用“车身朝向与目标点方向的夹角”决定转角：</p>
+<p>位置：<code>icv/controller.py: steering_control()</code> 与 <code>cpp/src/control.cpp: steering_control()</code>。两套后端从当前路线进度向前寻找预瞄点，用车身朝向与目标点的夹角决定转角：</p>
 <pre><code class="language-text">前进预瞄路程 = min(8.0, 0.65 + 0.65*abs(v)) m
 倒车预瞄路程 = min(1.5, 0.60 + 0.45*abs(v)) m
 
@@ -281,14 +295,15 @@ delta  = atan2(direction * 2*L*sin(alpha), d)
 </code></pre>
 <p>计算值先受最大转角限制，模型再限制转角变化速率。倒车由负速度和 <code>direction=-1</code> 的几何关系实现，不是倒放前进动画。当前没有单独的横向误差反馈增益，也不是 Stanley 或 LQR；记录的横向误差主要用于评估。</p>
 <h3 id="section-13">纵向：P 比例速度控制，不是 PID</h3>
-<p>位置：<code>controller.py: speed_control()</code>。</p>
+<p>两套实现：<code>icv/controller.py: speed_control()</code> 和 <code>cpp/src/control.cpp: speed_control()</code>；C++ 计算已与 Python 做数值对照。</p>
+<p>位置：<code>icv/controller.py: speed_control()</code> 与 <code>cpp/src/control.cpp: speed_control()</code>。两套后端都使用相同的 P 控制参数，并已作数值对照。</p>
 <pre><code class="language-text">v_ref = desired_speed * direction
 a_cmd = clip(2.5 * (v_ref - v), -4.5, 2.4)
 </code></pre>
 <p>只有比例项 Kp=2.5，没有积分项和微分项，因此不能称“完整 PID”。急停先把请求改成 <code>-sign(v)*brake</code>，然后同样限幅。</p>
 <p><strong>实现细节：当前有符号加速度上下界为 [-4.5,+2.4]，并不对称。</strong> 倒车加速/制动受同一限幅影响；源码中关于 symmetric actuator limits 的注释不准确，应以实际运算为准。README 仅说明现状，没有借此更改算法或已有结果。</p>
 <h3 id="section-14">目标速度如何决定</h3>
-<p><code>simulation.py</code> 把多种上限取最小值：巡航速度、终点停车包络、弯道曲率、路段限速、红灯停车、障碍物跟车、行人冲突预测。急停另覆盖加速度命令。</p>
+<p>Python 的 <code>simulation.py</code> 把多种上限取最小值：巡航速度、终点停车包络、弯道曲率、路段限速、红灯停车、障碍物跟车、行人冲突预测。C++ 的 <code>nevc_main.cpp</code> 用现场配置的巡航/限速、信号灯和感知障碍物约束速度；规则细节还需按官方场景标定。急停另覆盖加速度命令。</p>
 <p>曲率预瞄检查约前方 25 m，用 <code>sqrt(1.5/max(abs(curvature),1e-5))</code> 限速，1.5 是横向加速度预算 m/s²。限速区目标按该段上限的 98% 控制，进入低限速区前还有减速距离预瞄。</p>
 <p>停车函数是：</p>
 <pre><code class="language-text">d = max(0, distance)
@@ -312,8 +327,8 @@ y    = 1.75 + 3.5*q(u)
 </code></pre>
 <p>横移起终点的一阶与二阶导数为零，减少参考路线突变。具体场景调用 <code>start=0,end=10</code>。城市中心线是正弦组合并缩放长度，在三个已知路障附近叠加平滑横移。</p>
 <p><strong>这些参考路线在实验开始时生成。车不是看到未知障碍后才在线搜索变道路线；当前没有通用动态重规划、车道拓扑导航或自动读取官方地图。</strong> 后续需要正式感知和道路约束时，不能只修改网页路线。</p>
-<h3 id="section-18">泊车：Reeds-Shepp 规划，Pure Pursuit 跟踪</h3>
-<p><code>parking_plan()</code> 使用 <code>vendor/</code> 中保留原始来源的 PythonRobotics 算法，产生直线、圆弧以及前进/倒车段的候选组合。</p>
+<h3 id="section-18">离线泊车：Reeds-Shepp 规划，Pure Pursuit 跟踪</h3>
+<p>离线 Python 场景的 <code>parking_plan()</code> 使用 <code>vendor/</code> 中保留原始来源的 PythonRobotics 算法，产生直线、圆弧以及前进/倒车段的候选组合。C++ SDK 接入还不包含完整泊车路径搜索。</p>
 <p>当前固定准备点为 <code>(28,3.5,0)</code>，目标后轴姿态为 <code>(22,-4.5,pi/2)</code>。先前进到准备点，再生成候选。每条候选用膨胀 0.08 m 的完整车身逐点检查，要求留在道路内、不碰两侧停放车辆，并以倒车段结束。</p>
 <p>筛选后按“路径长度 + 4 × 方向切换次数”选代价最低者。这是在有限候选里择优，不保证有障碍条件下的全局最优。目标空位已知，没有自动视觉找车位。</p>
 <p>路径按前进/倒车拆为多个 Route。驶出路线将最后一段倒车路线反向，改为前进，再延长约 13 m。实际执行仍由控制器与模型闭环完成，同时作车身碰撞检查。</p>
@@ -564,7 +579,7 @@ y    = 1.75 + 3.5*q(u)
 <p><code>passed</code> 是当前用例已实现检查项的逻辑与；<code>completed</code> 是当前任务定义完成，AEB 完成是停住保持而非到达终点。<code>official_score</code> 保持 <code>null</code>；<code>local_score_estimate</code> 是本地估分，附加测试为 <code>null</code>。</p>
 <p><code>max_acceleration_mps2</code> 由纵向加速度与 <code>v²*tan(delta)/L</code> 横向加速度合成，不只是 CSV 的纵向值。<code>min_clearance_m</code> 是离散帧的车身至物体最小距离，无障碍时为 <code>null</code>。泊车换段会把 <code>progress_m</code> 归零，不能拿最后段进度除全路径长度判断完成率。</p>
 <h3 id="section-25">网页与 GIF：先算完，再播放</h3>
-<p>浏览器加载 <code>web/replays.js</code>，在 Canvas 画已保存的轨迹、物体和指标，不实时调用 Python 控制器。播放倍速只改变观看速度，不修改原计算时间、路线或分数。右侧从播放开始就显示整场结果，不是现场重新评分。</p>
+<p>浏览器根据顶部选择加载 <code>web/replays.js</code>（Python）或 <code>web/replays_cpp.js</code>（C++），在 Canvas 画已保存的轨迹、物体和指标，不实时运行控制器。播放倍速只改变观看速度，不修改原计算时间、路线或分数。右侧从播放开始就显示整场结果，不是现场重新评分。</p>
 <p>浏览器按约 0.1 秒间隔取轨迹帧，默认 dt=0.05 和复核 dt=0.025 与此匹配。若使用例如 dt=0.03，抽样间隔可能不恰好为 0.1 秒，网页时间与取帧可能偏移，以 CSV 时间为准。</p>
 <p>网页挡位按速度正负推断，静止时会显示 D，即使刚完成倒车入库。这是展示限制，不是真正挡位命令日志。无需把停止时显示 D 解读成车辆自动退出倒车段。</p>
 <h2 id="section-26">当前测量结果与验证方法</h2>
@@ -635,8 +650,8 @@ y    = 1.75 + 3.5*q(u)
 </tr>
 </tbody>
 </table></div>
-<p>9 个场景用 dt=0.025 秒也复核通过，见 <code>output/half_timestep_checks.json</code>。这只是步长敏感性检查，不是随机工况鲁棒性或连续时间安全的证明。</p>
-<pre><code class="language-powershell"># 四项回归测试
+<p>Python 的九个场景用 dt=0.025 秒也复核通过，见 <code>output/half_timestep_checks.json</code>。C++ 后端另以 dt=0.025/0.05 秒复核城市道路并以独立规则检查器校验九个场景通过。这些是步长与实现对照检查，不是随机工况鲁棒性或连续时间安全的证明。</p>
+<pre><code class="language-powershell"># Python 安全回归（另有 C++/双后端 CTest）
 python -m unittest discover -s tests -v
 
 # 9 个场景用更细步长复核，不覆盖网页主结果
@@ -651,8 +666,8 @@ python tools/verify_web.py
 # 检查说明页和四段 GIF
 python tools/verify_delivery.py
 </code></pre>
-<p>回归测试四项是：初始碰撞识别；正常红灯停车及构造闯灯/0.75 m 停距时的计分；后轴在路内但车身越界的识别；入库只停 9.95 秒时零分。不是所有功能都有单元测试。</p>
-<p>完整技术说明直接维护在 <code>README.html</code>，不再保留重复的 Markdown 技术说明；导出工具仅刷新末尾的运行汇总，保留正文与目录。浏览器验证工具还需要 <code>python -m pip install playwright</code> 和能启动的 Microsoft Edge；只观看网页或计算轨迹不需要 Playwright。GIF 使用 Windows 字体 <code>C:/Windows/Fonts/msyh.ttc</code>，其他系统需修改字体路径。</p>
+<p>Python 安全回归检查初始碰撞、信号灯停车计分、车身越界和泊车停车时长；C++ 另有原生核心单元测试及 Python/C++ 九场景闭环对照。不是所有功能都有单元测试，CTest 可用 <code>ctest --preset vs2022-release</code> 运行。</p>
+<p>完整技术说明直接维护在 <code>README.html</code>，不再保留重复的 Markdown 技术说明；导出工具只刷新文件尾部标记范围内的运行汇总，不覆盖正文。浏览器验证工具还需要 <code>python -m pip install playwright</code> 和能启动的 Microsoft Edge；只观看网页或计算轨迹不需要 Playwright。GIF 使用 Windows 字体 <code>C:/Windows/Fonts/msyh.ttc</code>。</p>
 <h2 id="section-27">实现边界与容易误解的地方</h2>
 <ul>
 <li>目前没有 MPC、完整 PID、强化学习或端到端神经网络驾驶；不要把路径规划、运动积分和控制方法混为一谈。</li>
@@ -680,11 +695,11 @@ python tools/verify_delivery.py
 </tr>
 <tr>
 <td>改算法后效果没变化</td>
-<td>重跑 <code>run_offline.py</code> 并刷新；GIF/HTML 另导出</td>
+<td>重跑 Python 或 C++ 后端；网页顶部在 Python/C++ 轨迹间切换</td>
 </tr>
 <tr>
 <td>左侧只剩一个场景</td>
-<td>执行过单场命令，重新执行全部场景即可</td>
+<td>检查选中的 <code>replays.js</code> / <code>replays_cpp.js</code> 是否已生成完整九场</td>
 </tr>
 <tr>
 <td>加快倍速能缩短成绩吗</td>
@@ -695,12 +710,12 @@ python tools/verify_delivery.py
 <td>路线预设，实际坐标由反馈控制和方程积分；可检查 CSV 误差和控制量</td>
 </tr>
 <tr>
-<td>为什么没有 C++ 工程</td>
-<td>本版是 Python，VS/CMake 留给 C++ 样例或后续迁移</td>
+<td>如何运行 C++ 仿真</td>
+<td>先构建 MSVC DLL，执行 <code>run_cpp_offline</code> 目标，再在浏览器顶部切换 C++ 后端</td>
 </tr>
 <tr>
-<td>缺少 numpy/shapely 等模块</td>
-<td>用同一 Python 环境执行 <code>python -m pip install -r requirements.txt</code></td>
+<td>缺少 Python 模块</td>
+<td>用运行项目的同一环境执行 <code>python -m pip install -r requirements.txt</code></td>
 </tr>
 <tr>
 <td>浏览器检查找不到 Edge</td>
@@ -723,16 +738,16 @@ python tools/verify_delivery.py
 <p>第 32 页：城市路段约 3.68 km，15 分钟内完成基础 1000；未完成按里程比例，超速和闯灯各扣 200，压实线每次扣 50；合加速度不超过 5 m/s²加 200；少于 7 分钟每快整 1 秒加 5。自建路线包含曲线、分段限速、三个路障和三处信号灯，原中心线为 3680 m，绕障后的实际规划路线会略长。道路外沿用完整车身检测。<strong>未重建官方实线分布和逐次压线评分，因此城市本地分数是假设无未建模扣分的估计，不能当正式评分。</strong> 无干扰交通流；附加跟车与行人只作算法练习。</p>
 <p>纯离线使用完整几何/物体坐标，相当于理想感知。没有相机图像识别、雷达噪声、轮胎打滑、坡道、动力总成、23 自由度动力学，也未覆盖所有 corner case。所有“通过”都只适用于这组确定性自建场景，不是对完整题库、官方模型或实际车辆的保证。离散检查步长 0.05 秒，不能证明连续时间下绝无碰撞；可以用 <code>--dt 0.025</code> 复核。</p>
 <h2 id="section-30">比赛开放后的操作</h2>
-<h3 id="section-31">基础适配器的数据流和配置</h3>
-<p>离线时 <code>model.advance()</code> 决定车辆下一状态；正式连接 NEVC 后，车辆下一状态应由 NEVC 自己的模型决定，算法应读取新 GPS/传感器帧再计算控制。<code>nevc_bridge.py</code> 没有直接调用离线积分器来覆盖官方车辆坐标。</p>
+<h3 id="section-31">NEVC 接入适配器的数据流和配置</h3>
+<p>离线时 Python/C++ 自己的积分器决定下一状态；接入 NEVC 后，车辆下一状态由 NEVC 模型决定，程序读取新 GPS/传感器帧再计算控制。<code>cpp/src/nevc_main.cpp</code> 和 <code>nevc_bridge.py</code> 均不调用离线积分器覆盖官方坐标。</p>
 <pre><code class="language-text">NEVC GPS/传感器/信号灯
         |
-nevc_bridge.py 读取并转换为 State 和物体列表
+cpp/src/nevc_main.cpp 读取 GPS/感知并构造状态（nevc_bridge.py 是基础 Python 版）
         |
-Route.project() + 基础规则 + controller.py
+Route.project() + C++ Pure Pursuit/P 速度控制及配置规则
         |
-a 请求 -&gt; 粗略油门/刹车比例
-delta rad -&gt; 已标定的归一化 steering
+a/delta -&gt; 油门、制动、归一化转向
+direction -&gt; Drive/Reverse 挡与倒车灯
         |
 SoSetDrive() / SoSetSignalLights()
         |
@@ -784,7 +799,14 @@ NEVC 推进自己的车辆模型 -&gt; 下一数据帧
 </tr>
 </tbody>
 </table></div>
-<p>基础适配器固定发 Drive 档，只支持当前已写出的前进控制，不具备离线泊车的完整前后向切换。GPS 失效、超过 0.5 秒帧未更新、物体/灯数据失败或偏离路线等条件会尝试发送制动请求，但未在真实场景验证失效时制动是否可靠生效。不能将这些检查称为已验证的实车安全机制。</p>
+<p>Python 基础适配器固定发 Drive 档，只支持已写出的前进控制。C++ SDK 控制程序在 <code>cpp/src/nevc_main.cpp</code> 发送油门/制动、转向、前进/倒车挡位和灯光，但不含离线泊车路线搜索；它只通过本机 SDK 编译和版本探测，未在比赛场景运行。GPS/感知失败或偏离路线时会请求停止，实际制动可靠性尚未验证。</p>
+<h3>通过 CMake GUI 和 Visual Studio 2022 开发</h3>
+<p>根目录 <code>CMakePresets.json</code> 包含 <code>vs2022</code>（x64，含本机 NEVC SDK）与 <code>vs2022-core</code>（不需 SDK 的离线核心）两个 preset。编译文件写入已被 Git 忽略的 <code>build/</code> 目录，不上传到 GitHub。</p>
+<p><strong>命令行：</strong>运行 <code>cmake --preset vs2022</code>、<code>cmake --build --preset vs2022-release --parallel 4</code> 和 <code>ctest --preset vs2022-release</code>。测试包括 C++ 单元测试、Python/C++ 控制与场景对照，以及只查询版本的 SDK 探测。</p>
+<p><strong>CMake GUI：</strong>双击 <code>open_cmake_gui.bat</code>，随后检查 Source 是仓库根目录、Build 是 <code>build/vs2022</code>，生成器应为 Visual Studio 17 2022/x64，<code>SIMONE_SDK_ROOT</code> 应指向本机 SDK。按 Configure 后检查无错误，再按 Generate。solution 位于 <code>build/vs2022/ICV_SIM.sln</code>。</p>
+<p><strong>Visual Studio 2022：</strong>双击 <code>open_visual_studio.bat</code> 打开 solution。将 <code>icv_core_tests</code> 设为启动项目可运行离线单元测试；<code>icv_nevc</code> 是链接本机 SimOne SDK 的接入程序。<code>icv_nevc --probe</code> 只查询 SDK 版本，不连接或控制模拟车辆。全部 C++ 离线场景通过 <code>cmake --build build/vs2022 --config Release --target run_cpp_offline</code> 启动；随后打开 <code>web/index.html</code>，用页面上方切换按钮查看 C++ 与 Python 的回放。</p>
+<p>换电脑时须在 CMake GUI 将 <code>SIMONE_SDK_ROOT</code> 设置为本机 SDK 根目录，目录应有 <code>include/</code> 和 <code>lib/Win64/SimOneAPI.lib</code>。没有 SDK 时选择 <code>vs2022-core</code> preset。</p>
+<p><strong>NEVC 接入尚待标定：</strong><code>icv_nevc</code> 只接受设有 <code>calibrated_for_nevc: true</code> 的已测配置；默认样例会拒绝驱动。读取 GPS、配置的传感器障碍物/信号灯，并请求下发转向、油门/制动、挡位和转向灯。正式开放后需在安全空场景逐项标定转角方向/比例、传感器 ID、灯 ID、挡位、时间同步和规则允许的感知来源，再匹配官方 SDK 版本。当前 SDK 3.0.0001 的构建、加载和版本探测均不代表 NEVC 官方联调成功。</p>
 <h3 id="section-32">开放后的顺序</h3>
 <ol>
 <li>登录 NEVC，先下载最新竞赛手册、完整题库、算法联调说明、传感器配置和虚实融合协议。保留版本日期，不能拿本 PDF 示例当完整正式规则。</li>
@@ -832,4 +854,4 @@ NEVC 推进自己的车辆模型 -&gt; 下一数据帧
 <li>PythonRobotics：https://github.com/AtsushiSakai/PythonRobotics ，MIT，源码及许可证在 vendor。</li>
 <li>Lucide：https://lucide.dev ，ISC，离线图标包在 web。</li>
 </ul>
-<h2 id="run-results">从当前文件读取的运行汇总</h2><small>全部为自建场景本地结果，官方平台未运行。城市估分未计未建模的官方实线扣分。</small><div class="table-scroll"><table id="run-results-table"><thead><tr><th>场景</th><th>检查</th><th>用时 / 秒</th><th>本地估分</th></tr></thead><tbody><tr><td>信号灯 / 红转绿</td><td>通过</td><td>33.15</td><td>100</td></tr><tr><td>信号灯 / 绿灯通行</td><td>通过</td><td>19.05</td><td>100</td></tr><tr><td>前方障碍物起步</td><td>通过</td><td>57.80</td><td>100</td></tr><tr><td>垂直泊车 / 倒入-停稳-驶出</td><td>通过</td><td>112.60</td><td>200</td></tr><tr><td>城市连续道路 / 自建 3.68 km</td><td>通过</td><td>380.10</td><td>1395</td></tr><tr><td>附加测试 / 弯道车道保持</td><td>通过</td><td>36.90</td><td>附加测试</td></tr><tr><td>附加测试 / 静止车辆紧急制动</td><td>通过</td><td>8.65</td><td>附加测试</td></tr><tr><td>附加测试 / 同车道跟车</td><td>通过</td><td>29.30</td><td>附加测试</td></tr><tr><td>附加测试 / 行人横穿让行</td><td>通过</td><td>20.20</td><td>附加测试</td></tr></tbody></table></div><p>红灯车头停车间距：[0.2848] m。</p><p>泊车停稳：10.55 s。</p><img src="output/parking.gif" alt="实际计算的泊车轨迹动画"></main></html>
+<!-- GENERATED RESULTS START --><h2 id="run-results">从当前文件读取的运行汇总</h2><small>全部为自建场景本地结果，官方平台未运行。城市估分未计未建模的官方实线扣分。</small><div class="table-scroll"><table id="run-results-table"><thead><tr><th>场景</th><th>检查</th><th>用时 / 秒</th><th>本地估分</th></tr></thead><tbody><tr><td>信号灯 / 红转绿</td><td>通过</td><td>33.15</td><td>100</td></tr><tr><td>信号灯 / 绿灯通行</td><td>通过</td><td>19.05</td><td>100</td></tr><tr><td>前方障碍物起步</td><td>通过</td><td>57.80</td><td>100</td></tr><tr><td>垂直泊车 / 倒入-停稳-驶出</td><td>通过</td><td>112.60</td><td>200</td></tr><tr><td>城市连续道路 / 自建 3.68 km</td><td>通过</td><td>380.10</td><td>1395</td></tr><tr><td>附加测试 / 弯道车道保持</td><td>通过</td><td>36.90</td><td>附加测试</td></tr><tr><td>附加测试 / 静止车辆紧急制动</td><td>通过</td><td>8.65</td><td>附加测试</td></tr><tr><td>附加测试 / 同车道跟车</td><td>通过</td><td>29.30</td><td>附加测试</td></tr><tr><td>附加测试 / 行人横穿让行</td><td>通过</td><td>20.20</td><td>附加测试</td></tr></tbody></table></div><p>红灯车头停车间距：[0.2848] m。</p><p>泊车停稳：10.55 s。</p><img src="output/parking.gif" alt="实际计算的泊车轨迹动画"><!-- GENERATED RESULTS END --></main></html>

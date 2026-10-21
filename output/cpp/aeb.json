@@ -1,0 +1,41 @@
+{
+  "key": "aeb",
+  "title": "附加测试 / 静止车辆紧急制动",
+  "backend": "offline_cpp_rk4",
+  "official_score": null,
+  "official_example": false,
+  "completed": true,
+  "time_s": 8.65,
+  "collision": false,
+  "boundary_contact": false,
+  "red_violation": false,
+  "speeding": false,
+  "max_tracking_error_m": 0.0,
+  "max_acceleration_mps2": 4.5,
+  "min_clearance_m": 1.7938,
+  "red_stop_gaps_m": [],
+  "green_start_delays_s": [],
+  "parked_seconds": 0.0,
+  "parked_in_slot": false,
+  "reverse_entry": false,
+  "progress_m": 47.306,
+  "route_length_m": 110.0,
+  "events": [
+    {
+      "t": 3.0,
+      "kind": "aeb"
+    }
+  ],
+  "dt_s": 0.05,
+  "indicator_before_change": true,
+  "local_score_estimate": null,
+  "checks": {
+    "completed": true,
+    "no_collision": true,
+    "inside_road": true,
+    "within_time": true,
+    "emergency_brake_observed": true
+  },
+  "passed": true,
+  "artifact_subdir": "cpp/"
+}

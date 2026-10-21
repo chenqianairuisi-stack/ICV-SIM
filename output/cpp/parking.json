@@ -1,0 +1,47 @@
+{
+  "key": "parking",
+  "title": "垂直泊车 / 倒入-停稳-驶出",
+  "backend": "offline_cpp_rk4",
+  "official_score": null,
+  "official_example": true,
+  "completed": true,
+  "time_s": 112.6,
+  "collision": false,
+  "boundary_contact": false,
+  "red_violation": false,
+  "speeding": false,
+  "max_tracking_error_m": 0.0226,
+  "max_acceleration_mps2": 1.625,
+  "min_clearance_m": 0.9422,
+  "red_stop_gaps_m": [],
+  "green_start_delays_s": [],
+  "parked_seconds": 10.55,
+  "parked_in_slot": true,
+  "reverse_entry": true,
+  "progress_m": 23.98,
+  "route_length_m": 63.081,
+  "events": [
+    {
+      "t": 63.5,
+      "kind": "parking_dwell_start"
+    },
+    {
+      "t": 74.05,
+      "kind": "parking_exit"
+    }
+  ],
+  "dt_s": 0.05,
+  "indicator_before_change": true,
+  "local_score_estimate": 200,
+  "checks": {
+    "completed": true,
+    "no_collision": true,
+    "inside_road": true,
+    "within_time": true,
+    "inside_target_slot": true,
+    "reverse_entry": true,
+    "stationary_at_least_10s": true
+  },
+  "passed": true,
+  "artifact_subdir": "cpp/"
+}

@@ -14,10 +14,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenario", choices=["all"] + KEYS, default="all")
     parser.add_argument("--dt", type=float, default=.05)
+    parser.add_argument("--backend", choices=("python", "cpp"), default="python")
+    parser.add_argument("--native-library", help="Path to the CMake-built icv_native DLL")
     args = parser.parse_args()
     if not .01 <= args.dt <= .1:
         parser.error("--dt must be between 0.01 and 0.1 seconds")
-    out = ROOT / "output"
+    backend = None
+    if args.backend == "cpp":
+        from icv.native import NativeBackend
+        backend = NativeBackend(args.native_library)
+    elif args.native_library:
+        parser.error("--native-library requires --backend cpp")
+    out = ROOT / "output" / "cpp" if backend else ROOT / "output"
     out.mkdir(exist_ok=True)
     keys = KEYS if args.scenario == "all" else [args.scenario]
     vehicle = Vehicle()
@@ -25,7 +33,9 @@ def main():
     for key in keys:
         print("Running", key, flush=True)
         scenario = make_scenario(key, vehicle)
-        result, trace = run(scenario, vehicle, args.dt)
+        result, trace = run(scenario, vehicle, args.dt, backend=backend)
+        if backend:
+            result["artifact_subdir"] = "cpp/"
         report.append(result)
         road = [list(scenario.road.exterior.coords)] if scenario.road.geom_type == "Polygon" else [list(p.exterior.coords) for p in scenario.road.geoms]
         replay = {"result": result, "trace": trace[::max(1, round(.1 / args.dt))],
@@ -44,7 +54,10 @@ def main():
         print(key, "PASS" if result["passed"] else "FAIL", "time", result["time_s"],
               "checks", result["checks"], flush=True)
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    (ROOT / "web" / "replays.js").write_text("window.REPLAYS=" + json.dumps(replays, ensure_ascii=False, separators=(",", ":")) + ";", encoding="utf-8")
+    replay_file, variable = ("replays_cpp.js", "REPLAYS_CPP") if backend else ("replays.js", "REPLAYS")
+    (ROOT / "web" / replay_file).write_text("window." + variable + "=" + json.dumps(replays, ensure_ascii=False, separators=(",", ":")) + ";", encoding="utf-8")
+    if backend:
+        backend.close()
     if not all(r["passed"] for r in report):
         raise SystemExit(1)
 

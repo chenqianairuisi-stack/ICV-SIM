@@ -1,0 +1,30 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "vs2022",
+      "displayName": "Visual Studio 2022 x64 + local NEVC SDK",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2022",
+      "cacheVariables": {"ICV_BUILD_NEVC": "ON", "SIMONE_SDK_ROOT": "E:/Sim-One/SimOneAPI"}
+    },
+    {
+      "name": "vs2022-core",
+      "displayName": "Visual Studio 2022 x64 (without the NEVC SDK)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2022-core",
+      "cacheVariables": {"ICV_BUILD_NEVC": "OFF"}
+    }
+  ],
+  "buildPresets": [
+    {"name": "vs2022-release", "configurePreset": "vs2022", "configuration": "Release"},
+    {"name": "vs2022-core-release", "configurePreset": "vs2022-core", "configuration": "Release"}
+  ],
+  "testPresets": [
+    {"name": "vs2022-release", "configurePreset": "vs2022", "configuration": "Release", "output": {"outputOnFailure": true}},
+    {"name": "vs2022-core-release", "configurePreset": "vs2022-core", "configuration": "Release", "output": {"outputOnFailure": true}}
+  ]
+}

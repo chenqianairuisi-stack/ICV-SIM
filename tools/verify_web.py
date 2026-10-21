@@ -19,6 +19,12 @@ with sync_playwright() as p:
     page.wait_for_timeout(500)
     assert page.locator("#time").inner_text() != first, "Playback did not advance"
     assert page.locator(".scenario").count() == 9
+    page.click("#backend-toggle")
+    assert "C++ MSVC" in page.locator("#backend-label").inner_text()
+    assert page.locator("#result-badge").inner_text() == "通过"
+    assert page.locator("#csv").get_attribute("href").startswith("../output/cpp/")
+    page.click("#backend-toggle")
+    assert "Python" in page.locator("#backend-label").inner_text()
     for key, button, fraction in [("traffic", 0, .38), ("parking", 3, .64), ("city", 4, .42)]:
         page.locator(".scenario").nth(button).click()
         page.evaluate("playing=false;clock=replay.result.time_s*" + str(fraction) + ";draw()")
