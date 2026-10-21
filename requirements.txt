@@ -3,4 +3,3 @@ scipy>=1.14
 shapely>=2.0
 matplotlib>=3.9
 pillow>=10
-markdown-it-py>=3.0

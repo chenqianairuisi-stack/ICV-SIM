@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ICV 代码结构与控制方法说明</title><style>body{font:15px/1.9 'Microsoft YaHei',sans-serif;color:#263338;background:#f4f6f6;margin:0}main{max-width:1040px;margin:auto;padding:35px 24px 70px}h1{font-size:27px;line-height:1.5}h2{font-size:20px;border-top:1px solid #d7e0e0;padding-top:25px;margin-top:36px}h3{font-size:17px;margin-top:27px}h2,h3{scroll-margin-top:20px}p,li{overflow-wrap:anywhere}a{color:#087d70}code,pre{font-family:Consolas,'Microsoft YaHei',monospace;background:#e6ecec;border-radius:3px}code{font-size:13px;padding:2px 4px;overflow-wrap:anywhere}pre{padding:18px;overflow:auto;font-size:12px;line-height:1.8}pre code{font-size:inherit;padding:0;white-space:pre;overflow-wrap:normal}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:10px;border-bottom:1px solid #d7dfdf;vertical-align:top;min-width:100px;overflow-wrap:anywhere}th{background:#e7eeed}.table-scroll{max-width:100%;overflow:auto;margin:18px 0}img{max-width:100%;height:auto}small{color:#697b80}.actions{display:flex;gap:20px;flex-wrap:wrap}.toc{padding:15px 0;border-bottom:1px solid #d7dfdf}.toc ol{columns:2;padding-left:24px}.toc li{break-inside:avoid;font-size:13px;padding:3px 10px 3px 0}@media(max-width:650px){main{padding:20px 14px 40px}h1{font-size:23px}h2{font-size:18px}.toc ol{columns:1}.actions{gap:12px;font-size:13px}td,th{padding:8px}pre{padding:12px}}</style><main><div class="actions"><a href="web/index.html">打开交互回放</a><a href="output/parking.gif">泊车动画</a><a href="output/report.json">原始检查报告</a><a href="IMPLEMENTATION.md">Markdown 原稿</a></div><h1>智能网联车设计：代码、文件结构与仿真详细说明</h1>
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ICV 代码结构与控制方法说明</title><style>body{font:15px/1.9 'Microsoft YaHei',sans-serif;color:#263338;background:#f4f6f6;margin:0}main{max-width:1040px;margin:auto;padding:35px 24px 70px}h1{font-size:27px;line-height:1.5}h2{font-size:20px;border-top:1px solid #d7e0e0;padding-top:25px;margin-top:36px}h3{font-size:17px;margin-top:27px}h2,h3{scroll-margin-top:20px}p,li{overflow-wrap:anywhere}a{color:#087d70}code,pre{font-family:Consolas,'Microsoft YaHei',monospace;background:#e6ecec;border-radius:3px}code{font-size:13px;padding:2px 4px;overflow-wrap:anywhere}pre{padding:18px;overflow:auto;font-size:12px;line-height:1.8}pre code{font-size:inherit;padding:0;white-space:pre;overflow-wrap:normal}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:10px;border-bottom:1px solid #d7dfdf;vertical-align:top;min-width:100px;overflow-wrap:anywhere}th{background:#e7eeed}.table-scroll{max-width:100%;overflow:auto;margin:18px 0}img{max-width:100%;height:auto}small{color:#697b80}.actions{display:flex;gap:20px;flex-wrap:wrap}.toc{padding:15px 0;border-bottom:1px solid #d7dfdf}.toc ol{columns:2;padding-left:24px}.toc li{break-inside:avoid;font-size:13px;padding:3px 10px 3px 0}@media(max-width:650px){main{padding:20px 14px 40px}h1{font-size:23px}h2{font-size:18px}.toc ol{columns:1}.actions{gap:12px;font-size:13px}td,th{padding:8px}pre{padding:12px}}</style><main><div class="actions"><a href="web/index.html">打开交互回放</a><a href="output/parking.gif">泊车动画</a><a href="output/report.json">原始检查报告</a></div><h1>智能网联车设计：代码、文件结构与仿真详细说明</h1>
 <p><strong>当前不是 MPC。横向使用 Pure Pursuit（纯追踪），纵向使用 P（比例）速度控制，再加规则决策；车辆由运动学自行车模型积分运动。不是完整 PID，也没有滚动优化求解器。</strong></p>
 <nav class="toc" aria-label="说明目录"><strong>说明目录</strong><ol><li class="h2"><a href="#section-1">先看效果</a></li><li class="h2"><a href="#section-2">软件的作用</a></li><li class="h2"><a href="#section-3">重新计算</a></li><li class="h2"><a href="#section-4">阅读方式</a></li><li class="h2"><a href="#section-5">文件结构：每一级负责什么</a></li><li class="h2"><a href="#section-6">代码结构：核心类与函数</a></li><li class="h2"><a href="#section-7">车是怎么动起来的</a></li><li class="h2"><a href="#section-11">控制方法详解</a></li><li class="h2"><a href="#section-16">路线怎么规划</a></li><li class="h2"><a href="#section-19">各场景具体怎样完成</a></li><li class="h2"><a href="#section-20">为什么不是 MPC，如何升级 MPC</a></li><li class="h2"><a href="#section-21">常用参数在哪里改</a></li><li class="h2"><a href="#section-22">输出数据怎么读</a></li><li class="h2"><a href="#section-26">当前测量结果与验证方法</a></li><li class="h2"><a href="#section-27">实现边界与容易误解的地方</a></li><li class="h2"><a href="#section-28">常见问题</a></li><li class="h2"><a href="#section-29">规则与实现边界</a></li><li class="h2"><a href="#section-30">比赛开放后的操作</a></li><li class="h2"><a href="#section-33">给队友的一段话</a></li><li class="h2"><a href="#section-34">来源</a></li><li><a href="#run-results">从当前文件读取的运行汇总</a></li></ol></nav><h2 id="section-1">先看效果</h2>
 <p>双击 <code>web/index.html</code>，无需登录、联网或启动服务器。选择左侧场景，使用播放、暂停、进度条和倍速查看车辆。右侧是整次运行的本地检查结果，底部是当前帧的数据。<code>README.html</code> 是可直接发给队友的完整交接说明。</p>
@@ -24,8 +24,7 @@ python -m unittest discover -s tests -v
 <h2 id="section-5">文件结构：每一级负责什么</h2>
 <pre><code class="language-text">ICV-SIM/                               克隆后的项目根目录
     |-- README.md                       GitHub 首页项目介绍与运行入口
-    |-- IMPLEMENTATION.md               详细技术说明原稿，改说明时编辑这里
-    |-- README.html                     浏览器版说明，由工具自动生成
+    |-- README.html                     唯一完整技术说明，直接编辑；工具刷新运行结果
     |-- requirements.txt                离线算法、动画和说明导出的依赖
     |-- run_offline.py                  入口：执行场景，保存轨迹及报告
     |-- run_simulation.bat              一键重算全部场景、导出、打开网页
@@ -77,7 +76,7 @@ python -m unittest discover -s tests -v
     |
     |-- tools/                          一级目录：开发、导出和验证工具
     |   |-- fetch_vendor.py             下载第三方规划器、辅助函数和许可
-    |   |-- make_delivery.py            从已有轨迹生成 GIF、HTML 和结果简表
+    |   |-- make_delivery.py            从已有轨迹生成 GIF，刷新 HTML 结果表与简表
     |   |-- check_timestep.py           全部 9 场景用 0.025 秒步长复核
     |   |-- verify_web.py               检查播放、画布及桌面/手机/平板尺寸
     |   `-- verify_delivery.py          检查说明页、资源链接和四段 GIF
@@ -643,7 +642,7 @@ python -m unittest discover -s tests -v
 # 9 个场景用更细步长复核，不覆盖网页主结果
 python tools/check_timestep.py
 
-# 只重建说明页与简表，不重新仿真或导出 GIF
+# 只刷新 HTML 运行结果与简表，不重新仿真或导出 GIF
 python tools/make_delivery.py --docs-only
 
 # 检查回放播放、桌面/手机/平板尺寸
@@ -653,7 +652,7 @@ python tools/verify_web.py
 python tools/verify_delivery.py
 </code></pre>
 <p>回归测试四项是：初始碰撞识别；正常红灯停车及构造闯灯/0.75 m 停距时的计分；后轴在路内但车身越界的识别；入库只停 9.95 秒时零分。不是所有功能都有单元测试。</p>
-<p>HTML 导出额外依赖 <code>markdown-it-py</code>，已列入 requirements。浏览器验证工具还需要 <code>python -m pip install playwright</code> 和能启动的 Microsoft Edge；只观看网页或计算轨迹不需要 Playwright。GIF 使用 Windows 字体 <code>C:/Windows/Fonts/msyh.ttc</code>，其他系统需修改字体路径。</p>
+<p>完整技术说明直接维护在 <code>README.html</code>，不再保留重复的 Markdown 技术说明；导出工具仅刷新末尾的运行汇总，保留正文与目录。浏览器验证工具还需要 <code>python -m pip install playwright</code> 和能启动的 Microsoft Edge；只观看网页或计算轨迹不需要 Playwright。GIF 使用 Windows 字体 <code>C:/Windows/Fonts/msyh.ttc</code>，其他系统需修改字体路径。</p>
 <h2 id="section-27">实现边界与容易误解的地方</h2>
 <ul>
 <li>目前没有 MPC、完整 PID、强化学习或端到端神经网络驾驶；不要把路径规划、运动积分和控制方法混为一谈。</li>
@@ -702,10 +701,6 @@ python tools/verify_delivery.py
 <tr>
 <td>缺少 numpy/shapely 等模块</td>
 <td>用同一 Python 环境执行 <code>python -m pip install -r requirements.txt</code></td>
-</tr>
-<tr>
-<td>缺少 markdown_it</td>
-<td>对应包名为 <code>markdown-it-py</code>，安装 requirements 即可</td>
 </tr>
 <tr>
 <td>浏览器检查找不到 Edge</td>

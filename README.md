@@ -6,7 +6,7 @@
 
 项目将算法计算与网页展示分开：Python 根据车辆状态持续计算控制指令并更新车辆运动，浏览器读取仿真生成的轨迹，提供播放、暂停、进度拖动和倍速查看功能。
 
-- [详细技术说明：文件结构、函数、控制公式与队友交接](IMPLEMENTATION.md)
+- [完整 HTML 技术说明：文件结构、函数、控制公式与队友交接](README.html)（下载仓库后用浏览器打开）
 - [本地运行结果汇总](output/RESULTS.md)
 - [泊车动画](output/parking.gif) / [城市道路动画](output/city.gif)
 - 下载或克隆仓库后，双击 `web/index.html` 查看交互回放，双击 `README.html` 阅读浏览器版详细说明。GitHub 文件预览页面不会直接运行 HTML。
@@ -54,7 +54,7 @@
 - `vendor/`：第三方规划算法及其来源、许可证。
 - `nevc_bridge.py`、`config/`：待正式联调的 NEVC 基础接口适配与配置。
 
-详细文件说明、控制公式、参数位置和操作方法见 [IMPLEMENTATION.md](IMPLEMENTATION.md)。
+详细文件说明、控制公式、参数位置和操作方法统一放在 [README.html](README.html)，下载仓库后用浏览器打开。
 
 ## 运行方式
 

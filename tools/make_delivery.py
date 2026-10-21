@@ -1,4 +1,4 @@
-"""Build handoff docs and animations; --docs-only preserves simulation assets."""
+"""Refresh the HTML results and animations; --docs-only preserves simulation assets."""
 import argparse
 import json
 import html
@@ -6,7 +6,6 @@ import math
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from markdown_it import MarkdownIt
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = json.loads((ROOT / "web/replays.js").read_text(encoding="utf-8").removeprefix("window.REPLAYS=").removesuffix(";"))
@@ -66,25 +65,11 @@ def docs():
     for d in DATA:
         r = d["result"]
         rows.append(f"<tr><td>{html.escape(r['title'])}</td><td>{'通过' if r['passed'] else '未通过'}</td><td>{r['time_s']:.2f}</td><td>{r['local_score_estimate'] if r['local_score_estimate'] is not None else '附加测试'}</td></tr>")
-    text = (ROOT / "IMPLEMENTATION.md").read_text(encoding="utf-8")
-    md = MarkdownIt("default", {"html": False}).enable("table")
-    md.renderer.rules["table_open"] = lambda tokens, idx, options, env: '<div class="table-scroll"><table>\n'
-    md.renderer.rules["table_close"] = lambda tokens, idx, options, env: '</table></div>\n'
-    tokens = md.parse(text)
-    headings = []
-    for i, token in enumerate(tokens):
-        if token.type == "heading_open" and token.tag in ("h2", "h3"):
-            anchor = "section-" + str(len(headings) + 1)
-            token.attrSet("id", anchor)
-            headings.append((anchor, tokens[i + 1].content, token.tag))
-    toc = '<nav class="toc" aria-label="说明目录"><strong>说明目录</strong><ol>'
-    toc += ''.join('<li class="' + tag + '"><a href="#' + anchor + '">' + html.escape(label) + '</a></li>' for anchor, label, tag in headings if tag == "h2")
-    toc += '<li><a href="#run-results">从当前文件读取的运行汇总</a></li></ol></nav>'
-    intro_end = next(i for i, token in enumerate(tokens) if token.type == "heading_open" and token.tag == "h2")
-    body = md.renderer.render(tokens[:intro_end], md.options, {}) + toc + md.renderer.render(tokens[intro_end:], md.options, {})
-    style = "body{font:15px/1.9 'Microsoft YaHei',sans-serif;color:#263338;background:#f4f6f6;margin:0}main{max-width:1040px;margin:auto;padding:35px 24px 70px}h1{font-size:27px;line-height:1.5}h2{font-size:20px;border-top:1px solid #d7e0e0;padding-top:25px;margin-top:36px}h3{font-size:17px;margin-top:27px}h2,h3{scroll-margin-top:20px}p,li{overflow-wrap:anywhere}a{color:#087d70}code,pre{font-family:Consolas,'Microsoft YaHei',monospace;background:#e6ecec;border-radius:3px}code{font-size:13px;padding:2px 4px;overflow-wrap:anywhere}pre{padding:18px;overflow:auto;font-size:12px;line-height:1.8}pre code{font-size:inherit;padding:0;white-space:pre;overflow-wrap:normal}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:10px;border-bottom:1px solid #d7dfdf;vertical-align:top;min-width:100px;overflow-wrap:anywhere}th{background:#e7eeed}.table-scroll{max-width:100%;overflow:auto;margin:18px 0}img{max-width:100%;height:auto}small{color:#697b80}.actions{display:flex;gap:20px;flex-wrap:wrap}.toc{padding:15px 0;border-bottom:1px solid #d7dfdf}.toc ol{columns:2;padding-left:24px}.toc li{break-inside:avoid;font-size:13px;padding:3px 10px 3px 0}@media(max-width:650px){main{padding:20px 14px 40px}h1{font-size:23px}h2{font-size:18px}.toc ol{columns:1}.actions{gap:12px;font-size:13px}td,th{padding:8px}pre{padding:12px}}"
-    content = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ICV 代码结构与控制方法说明</title><style>' + style + '</style><main><div class="actions"><a href="web/index.html">打开交互回放</a><a href="output/parking.gif">泊车动画</a><a href="output/report.json">原始检查报告</a><a href="IMPLEMENTATION.md">Markdown 原稿</a></div>'
-    content += body
+    # The HTML is the sole detailed guide; only its generated results tail is replaced.
+    document = (ROOT / "README.html").read_text(encoding="utf-8")
+    content, marker, _ = document.partition('<h2 id="run-results">')
+    if not marker:
+        raise ValueError("README.html is missing the run-results section")
     content += '<h2 id="run-results">从当前文件读取的运行汇总</h2><small>全部为自建场景本地结果，官方平台未运行。城市估分未计未建模的官方实线扣分。</small><div class="table-scroll"><table id="run-results-table"><thead><tr><th>场景</th><th>检查</th><th>用时 / 秒</th><th>本地估分</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>'
     by_key = {d["result"]["key"]: d["result"] for d in DATA}
     if "traffic_red" in by_key:
