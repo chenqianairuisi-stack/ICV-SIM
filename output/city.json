@@ -1,0 +1,54 @@
+{
+  "key": "city",
+  "title": "城市连续道路 / 自建 3.68 km",
+  "backend": "offline_scipy_bicycle",
+  "official_score": null,
+  "official_example": true,
+  "completed": true,
+  "time_s": 380.1,
+  "collision": false,
+  "boundary_contact": false,
+  "red_violation": false,
+  "speeding": false,
+  "max_tracking_error_m": 0.0937,
+  "max_acceleration_mps2": 3.7881,
+  "min_clearance_m": 2.1964,
+  "red_stop_gaps_m": [
+    0.2843,
+    0.2844
+  ],
+  "green_start_delays_s": [
+    0.05,
+    0.05
+  ],
+  "parked_seconds": 0.0,
+  "parked_in_slot": false,
+  "reverse_entry": false,
+  "progress_m": 3681.159,
+  "route_length_m": 3681.159,
+  "events": [
+    {
+      "t": 137.05,
+      "kind": "red_stop",
+      "gap_m": 0.2843
+    },
+    {
+      "t": 269.85,
+      "kind": "red_stop",
+      "gap_m": 0.2844
+    }
+  ],
+  "dt_s": 0.05,
+  "indicator_before_change": true,
+  "local_score_estimate": 1395,
+  "checks": {
+    "completed": true,
+    "no_collision": true,
+    "inside_road": true,
+    "within_time": true,
+    "within_speed_limit": true,
+    "no_red_crossing": true,
+    "acceleration_at_most_5": true
+  },
+  "passed": true
+}

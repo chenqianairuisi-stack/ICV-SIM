@@ -1,0 +1,48 @@
+{
+  "key": "traffic_red",
+  "title": "信号灯 / 红转绿",
+  "backend": "offline_scipy_bicycle",
+  "official_score": null,
+  "official_example": true,
+  "completed": true,
+  "time_s": 33.15,
+  "collision": false,
+  "boundary_contact": false,
+  "red_violation": false,
+  "speeding": false,
+  "max_tracking_error_m": 0.0,
+  "max_acceleration_mps2": 2.4,
+  "min_clearance_m": null,
+  "red_stop_gaps_m": [
+    0.2848
+  ],
+  "green_start_delays_s": [
+    0.05
+  ],
+  "parked_seconds": 0.0,
+  "parked_in_slot": false,
+  "reverse_entry": false,
+  "progress_m": 100.0,
+  "route_length_m": 100.0,
+  "events": [
+    {
+      "t": 11.7,
+      "kind": "red_stop",
+      "gap_m": 0.2848
+    }
+  ],
+  "dt_s": 0.05,
+  "indicator_before_change": true,
+  "local_score_estimate": 100,
+  "checks": {
+    "completed": true,
+    "no_collision": true,
+    "inside_road": true,
+    "within_time": true,
+    "no_red_crossing": true,
+    "red_stop_within_0_5m": true,
+    "green_start_within_5s": true,
+    "red_stop_observed": true
+  },
+  "passed": true
+}

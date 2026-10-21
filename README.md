@@ -1,9 +1,15 @@
 # ICV-SIM
-# 智能网联车离线规划、控制与仿真
+
+智能网联车离线规划、控制与仿真
 
 本项目面向 NEVC 智能网联车竞赛的前期开发与算法验证。在官方平台尚未开放、暂时无法登录联调的情况下，使用 Python 搭建本地闭环仿真环境，完成车辆路径规划、运动控制、安全决策、运行记录和可视化回放。
 
 项目将算法计算与网页展示分开：Python 根据车辆状态持续计算控制指令并更新车辆运动，浏览器读取仿真生成的轨迹，提供播放、暂停、进度拖动和倍速查看功能。
+
+- [详细技术说明：文件结构、函数、控制公式与队友交接](IMPLEMENTATION.md)
+- [本地运行结果汇总](output/RESULTS.md)
+- [泊车动画](output/parking.gif) / [城市道路动画](output/city.gif)
+- 下载或克隆仓库后，双击 `web/index.html` 查看交互回放，双击 `README.html` 阅读浏览器版详细说明。GitHub 文件预览页面不会直接运行 HTML。
 
 ## 功能与场景
 
@@ -48,9 +54,16 @@
 - `vendor/`：第三方规划算法及其来源、许可证。
 - `nevc_bridge.py`、`config/`：待正式联调的 NEVC 基础接口适配与配置。
 
-详细文件说明、控制公式、参数位置和操作方法见项目中的 `README.md`。
+详细文件说明、控制公式、参数位置和操作方法见 [IMPLEMENTATION.md](IMPLEMENTATION.md)。
 
 ## 运行方式
+
+克隆仓库：
+
+```bash
+git clone https://github.com/chenqianairuisi-stack/ICV-SIM.git
+cd ICV-SIM
+```
 
 安装依赖并运行全部场景：
 

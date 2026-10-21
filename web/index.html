@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ICV 驾驶仿真实验台</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div class="brand"><span class="brand-mark">ICV</span><div><strong>驾驶仿真实验台</strong><small>智能网联车设计 · 2026</small></div></div><span class="environment"><i></i>离线仿真 / 自建场景</span><a href="../README.html" title="打开交接说明" class="icon-button" aria-label="交接说明"><i data-lucide="book-open"></i></a></header>
+<div class="workspace">
+<aside class="scenario-panel"><div class="section-label">测试场景 <span id="total"></span></div><nav id="scenarios"></nav><div class="run-status"><span class="dot"></span><span id="summary"></span></div></aside>
+<main>
+<div class="scene-heading"><div><span id="case-id"></span><h1 id="title"></h1></div><label class="follow"><input id="follow" type="checkbox" checked>跟随车辆</label></div>
+<div class="viewport"><canvas id="scene" aria-label="车辆轨迹仿真画布"></canvas><div class="canvas-tag"><span class="dot"></span><span id="phase"></span></div><div class="compass">N ↑</div><div id="scale"></div><div class="legend"><span><b class="cyan"></b>测试车辆</span><span><b class="yellow"></b>规划轨迹</span><span><b class="white"></b>障碍物</span></div></div>
+<div class="transport"><button id="reset" class="icon-button" title="重新播放" aria-label="重新播放"><i data-lucide="rotate-ccw"></i></button><button id="play" class="play-button" title="播放或暂停" aria-label="播放或暂停"><i data-lucide="play"></i></button><span id="time">00:00.0</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="回放进度"><span id="duration"></span><select id="rate" aria-label="回放速度"><option value="1">1×</option><option value="2">2×</option><option value="5" selected>5×</option><option value="10">10×</option><option value="30">30×</option></select><button id="download" class="icon-button" title="下载当前检查报告" aria-label="下载检查报告"><i data-lucide="download"></i></button></div>
+<div class="telemetry"><div><span>车速</span><strong id="speed">0.0<small> km/h</small></strong><div class="meter"><i id="speed-bar"></i></div></div><div><span>纵向加速度</span><strong id="accel">0.00<small> m/s²</small></strong></div><div><span>前轮转角</span><strong id="steer">0.0<small> °</small></strong></div><div><span>横向误差</span><strong id="error">0.000<small> m</small></strong></div><div><span>挡位 / 转向灯</span><strong id="gear">D <small> / 关闭</small></strong></div></div>
+</main>
+<aside class="results-panel"><div class="section-label">规则检查 <span id="result-badge"></span></div><div class="score"><span>本地规则估分</span><strong id="score"></strong><small>官方平台成绩：未测</small></div><div id="checks"></div><div class="section-label event-title">事件记录</div><div id="events"></div><a id="csv" class="export" href="#"><i data-lucide="file-spreadsheet"></i>轨迹数据 CSV<i data-lucide="arrow-up-right"></i></a></aside>
+</div><footer><span>SciPy RK45 · 运动学自行车模型 · <span id="dt"></span></span><span>车道 / 信号灯 / 碰撞 / 泊车</span></footer>
+<script src="lucide.min.js"></script><script src="replays.js"></script><script src="app.js"></script>
+</body></html>

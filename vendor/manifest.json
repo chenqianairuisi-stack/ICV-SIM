@@ -1,0 +1,17 @@
+[
+  {
+    "file": "reeds_shepp_path_planning.py",
+    "url": "https://raw.githubusercontent.com/AtsushiSakai/PythonRobotics/master/PathPlanning/ReedsSheppPath/reeds_shepp_path_planning.py",
+    "sha256": "7b2bc055cd9de93a95d9ed4a000bad049ccc889324600d3736ed4da18f7ea947"
+  },
+  {
+    "file": "utils/angle.py",
+    "url": "https://raw.githubusercontent.com/AtsushiSakai/PythonRobotics/master/utils/angle.py",
+    "sha256": "62c3f0fdc76298d772d574b7a4357fded9265d1e0af048d87b5c8ca1a528017a"
+  },
+  {
+    "file": "LICENSE.PythonRobotics",
+    "url": "https://raw.githubusercontent.com/AtsushiSakai/PythonRobotics/master/LICENSE",
+    "sha256": "ca6f10832a25c1cd07fa62872458ca336a6ea83ee2f2236216086bd7a5bbf264"
+  }
+]

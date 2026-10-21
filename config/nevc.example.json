@@ -1,0 +1,13 @@
+{
+  "calibrated_for_nevc": false,
+  "route_xy": [[0, 0], [30, 0], [80, 0]],
+  "steering_radians_to_percent": 0,
+  "obstacle_source": "sensor",
+  "sensor_id": "REPLACE_WITH_ACTUAL_SENSOR_ID",
+  "ground_truth_permitted_by_rules": false,
+  "cruise_mps": 6,
+  "max_route_error_m": 1.2,
+  "lights": [],
+  "speed_zones": [],
+  "indicator_zones": []
+}
